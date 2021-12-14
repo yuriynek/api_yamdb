@@ -2,6 +2,8 @@ from django.db import models
 
 SCORES = [i for i in range(1, 11)]
 
+class Review(models.Model):
+
 
 class Review(models.Model):
     title = models.ForeignKey('Title',
