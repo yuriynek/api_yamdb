@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .mixins import CreateByAdminOrReadOnlyModelMixin, AuthorStaffOrReadOnlyModelMixin
-from permissions import IsAdminOrReadOnlyPermission
+from .permissions import IsAdminOrReadOnlyPermission
 
 
 class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
@@ -46,6 +46,6 @@ class CommentViewSet(AuthorStaffOrReadOnlyModelMixin):
     pass
 
 
-class UserViewSet(...):
-    """Пока что не разбирался - @yurynek"""
-    pass
+# class UserViewSet(...):
+#     """Пока что не разбирался - @yurynek"""
+#     pass
