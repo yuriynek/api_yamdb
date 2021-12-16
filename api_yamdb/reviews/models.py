@@ -1,68 +1,61 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-SCORES = [i for i in range(1, 11)]
+SCORES = [(i, i) for i in range(1, 11)]
+USER_ROLES = (('user', 'Пользователь'),
+              ('moderator', 'Модератор'),
+              ('admin', 'Администратор'))
 
 
 class User(AbstractUser):
-<<<<<<< HEAD
     bio = models.TextField('Биография',
                            blank=True,)
-    role = models.CharField(choices=...)
+    role = models.CharField(choices=USER_ROLES, default='user', max_length=128)
+
+    class Meta:
+        db_table = 'users'
 
 
 class Category(models.Model):
     name = models.TextField(max_length=256, verbose_name='Название категории')
     slug = models.SlugField(max_length=50, unique=True)
 
+    class Meta:
+        db_table = 'category'
+
 
 class Genre(models.Model):
     name = models.TextField(verbose_name='Название жанра')
-=======
-    bio = models.TextField(
-        'Биография',
-        blank=True,
-    )
-    role = models.CharField(choices=...)
-
-
-
-class Category(models.Model):
     slug = models.SlugField(unique=True)
 
-
-
-class Genre(models.Model):
->>>>>>> bd18dedd057040cf06587f3753b41c0d524e64a0
-    slug = models.SlugField(unique=True)
+    class Meta:
+        db_table = 'genre'
 
 
 class Title(models.Model):
-<<<<<<< HEAD
     name = models.TextField(max_length=255,
                             verbose_name='Название произведения')
     year = models.IntegerField(verbose_name='Год выпуска')
     description = models.TextField(max_length=255, verbose_name='Описание')
-    genre = models.ForeignKey(Genre,
-                              on_delete=models.SET_NULL,
-                              verbose_name='Жанр',
-                              blank=True,
-                              null=True)
+    genre = models.ManyToManyField(Genre,
+                                   through='GenreTitle',
+                                   verbose_name='Жанр')
     category = models.ForeignKey(Category,
                                  on_delete=models.SET_NULL,
                                  verbose_name='Категория',
                                  blank=True,
                                  null=True)
-=======
-    name = models.TextField(max_length=255, verbose_name="name")
-    year = models.IntegerField()
-    category = models.ForeignKey(Category, verbose_name="Category")
-    genre = models.ForeignKey(Genre,
-                              on_delete=models.SET_NULL,
 
-                              )
+    class Meta:
+        db_table = 'titles'
 
->>>>>>> bd18dedd057040cf06587f3753b41c0d524e64a0
+
+class GenreTitle(models.Model):
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'genre_title'
 
 
 class Review(models.Model):
@@ -80,6 +73,9 @@ class Review(models.Model):
                                 choices=SCORES)
     pub_date = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'review'
+
 
 class Comment(models.Model):
     review = models.ForeignKey(Review,
@@ -89,6 +85,9 @@ class Comment(models.Model):
     author = models.ForeignKey('User',
                                verbose_name='Автор',
                                on_delete=models.CASCADE,
-                               related_name='reviews',
+                               related_name='comments',
                                db_column='author')
     pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'comments'

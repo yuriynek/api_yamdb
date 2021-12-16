@@ -9,9 +9,9 @@ app_name = 'api'
 API_VERSION = 'v1'
 
 router = DefaultRouter()
-router.register('categories', views.CategoryViewSet)
-router.register('genres', views.CategoryViewSet)
-router.register('titles', views.TitleViewSet)
+router.register('categories', views.CategoryViewSet, basename='categories api endpoint')
+router.register('genres', views.CategoryViewSet, basename='genres api endpoint')
+router.register('titles', views.TitleViewSet, basename='titles api endpoint')
 router.register(r'titles/(?P<post_id>\d+)/reviews',
                 views.ReviewViewSet,
                 basename='title reviews api endpoint')
