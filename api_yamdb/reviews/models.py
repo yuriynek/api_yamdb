@@ -5,6 +5,7 @@ SCORES = [i for i in range(1, 11)]
 
 
 class User(AbstractUser):
+<<<<<<< HEAD
     bio = models.TextField('Биография',
                            blank=True,)
     role = models.CharField(choices=...)
@@ -17,10 +18,27 @@ class Category(models.Model):
 
 class Genre(models.Model):
     name = models.TextField(verbose_name='Название жанра')
+=======
+    bio = models.TextField(
+        'Биография',
+        blank=True,
+    )
+    role = models.CharField(choices=...)
+
+
+
+class Category(models.Model):
+    slug = models.SlugField(unique=True)
+
+
+
+class Genre(models.Model):
+>>>>>>> bd18dedd057040cf06587f3753b41c0d524e64a0
     slug = models.SlugField(unique=True)
 
 
 class Title(models.Model):
+<<<<<<< HEAD
     name = models.TextField(max_length=255,
                             verbose_name='Название произведения')
     year = models.IntegerField(verbose_name='Год выпуска')
@@ -35,6 +53,16 @@ class Title(models.Model):
                                  verbose_name='Категория',
                                  blank=True,
                                  null=True)
+=======
+    name = models.TextField(max_length=255, verbose_name="name")
+    year = models.IntegerField()
+    category = models.ForeignKey(Category, verbose_name="Category")
+    genre = models.ForeignKey(Genre,
+                              on_delete=models.SET_NULL,
+
+                              )
+
+>>>>>>> bd18dedd057040cf06587f3753b41c0d524e64a0
 
 
 class Review(models.Model):
