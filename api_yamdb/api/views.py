@@ -23,6 +23,8 @@ class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
     filterset_fields = ('slug',)
     search_fields = ('name',)
 
+    pass
+
 
 class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
     """Доступные методы: GET (перечень), POST, DEL.
