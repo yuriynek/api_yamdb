@@ -26,8 +26,6 @@ class IsAuthorOrStaffOrReadOnlyPermission(permissions.BasePermission):
         """Проверка. Если запрос только на чтение, то разрешаем его.
         Если пользователь авторизован - разрешает создание записи
         Если запрос на изменение - проверяем, является ли пользователь админом/модератором/автором"""
-        if request.method in permissions.SAFE_METHODS:
-            return True
         return any([request.user.role == 'admin',
                     request.user.role == 'moderator',
                     obj.author == request.user
