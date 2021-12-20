@@ -75,6 +75,10 @@ class Review(models.Model):
 
     class Meta:
         db_table = 'review'
+        constraints = [models.UniqueConstraint(
+            fields=['title', 'author'],
+            name='unique author review'
+        )]
 
 
 class Comment(models.Model):
