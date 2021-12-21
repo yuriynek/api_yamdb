@@ -8,12 +8,17 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.core.mail import send_mail
 from .serializers import TitleSerializer, GenreSerializer, \
     CategorySerializer, ReviewSerializer, CommentSerializer, UserCreateThroughEmailSerializer, UserSerializer, \
-    ReadTitleSerializer
+    ReadTitleSerializer, MyTokenObtainPairViewSerializer
 from .mixins import CreateByAdminOrReadOnlyModelMixin, AuthorStaffOrReadOnlyModelMixin
 from .permissions import IsAdminOrReadOnlyPermission, IsAdminUserPermission
 from rest_framework.decorators import api_view, permission_classes
 from reviews.models import Title, Genre, Category, Review, User
 from django_filters.rest_framework import DjangoFilterBackend
+from .filters import TitleFilter
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 
 class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
@@ -40,7 +45,6 @@ class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
     """Доступные методы: GET (перечень), POST, DEL.
     На чтение доступ без токена, на добавление/удаление - админу
     Также требуется пагинация и поиск по названию жанра"""
-    # queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
@@ -61,11 +65,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     На чтение доступ без токена, на добавление/обновление/удаление - админу
     Также требуется пагинация"""
     queryset = Title.objects.all()
-    # serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnlyPermission,)
     filter_backends = (DjangoFilterBackend,)
     pagination_class = LimitOffsetPagination
-    filterset_fields = ('name', 'year', 'category__slug', 'genre__slug')
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
@@ -170,13 +173,20 @@ def user_own_view(request):
     )
 
 
-@api_view(['POST', 'GET'])
-@permission_classes([permissions.AllowAny])
-def get_tokens_for_user(request):
-    user = get_object_or_404(User, username=request.data.get('username'))
+# @api_view(['POST', 'GET'])
+# @permission_classes([permissions.AllowAny])
+# def get_tokens_for_user(request):
+#     user = get_object_or_404(User, username=request.data.get('username'))
+#     confirmation_code = request.data.get('password')
+#     if confirmation_code != user.password:
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
+#     refresh = RefreshToken.for_user(user)
+#     return Response({
+#         'refresh': str(refresh),
+#         'access': str(refresh.access_token),
+#     })
 
-    refresh = RefreshToken.for_user(user)
-    return Response({
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    })
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairViewSerializer
+    queryset = User.objects.all()

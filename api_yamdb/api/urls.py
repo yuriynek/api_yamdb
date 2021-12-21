@@ -29,7 +29,7 @@ router.register('users', views.UserViewSet,
 
 
 urlpatterns = [
+    path(f'{API_VERSION}/auth/token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path(f'{API_VERSION}/users/me/', views.user_own_view, name='user_own_info'),
     path(f'{API_VERSION}/', include(router.urls)),
-    path(f'{API_VERSION}/auth/token/', views.get_tokens_for_user, name='token_obtain_pair'),
 ]

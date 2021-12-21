@@ -1,7 +1,8 @@
-from rest_framework import serializers
+import rest_framework.exceptions
+from rest_framework import serializers, status
 from reviews.models import Category, Genre, Title, Review, Comment, User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -84,9 +85,12 @@ class UserCreateThroughEmailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_username(value):
+        usernames = [user.username for user in User.objects.all()]
+        if value in usernames:
+            raise serializers.ValidationError('Такой username уже существует!')
         if value == 'me':
             raise serializers.ValidationError(
-                'Нельзя использовать username "me"!')
+                'Такой username нельзя использовать')
         return value
 
     @staticmethod
@@ -107,5 +111,25 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('username', 'email',
                   'first_name', 'last_name', 'bio', 'role')
 
-    def validate_email(self):
-        pass
+    @staticmethod
+    def validate_email(value):
+        emails = [user.email for user in User.objects.all()]
+        if value in emails:
+            raise serializers.ValidationError(
+                'Такой email уже существует')
+        return value
+
+    @staticmethod
+    def validate_username(value):
+        usernames = [user.username for user in User.objects.all()]
+        if value in usernames:
+            raise serializers.ValidationError('Такой username уже существует!')
+        if value == 'me':
+            raise serializers.ValidationError(
+                'Такой username нельзя использовать')
+        return value
+
+
+class MyTokenObtainPairViewSerializer(TokenObtainPairSerializer):
+
+    pass
