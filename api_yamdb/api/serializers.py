@@ -128,8 +128,3 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Такой username нельзя использовать')
         return value
-
-
-class MyTokenObtainPairViewSerializer(TokenObtainPairSerializer):
-
-    pass

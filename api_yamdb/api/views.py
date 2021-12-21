@@ -1,3 +1,4 @@
+import rest_framework.exceptions
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -8,7 +9,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.core.mail import send_mail
 from .serializers import TitleSerializer, GenreSerializer, \
     CategorySerializer, ReviewSerializer, CommentSerializer, UserCreateThroughEmailSerializer, UserSerializer, \
-    ReadTitleSerializer, MyTokenObtainPairViewSerializer
+    ReadTitleSerializer
 from .mixins import CreateByAdminOrReadOnlyModelMixin, AuthorStaffOrReadOnlyModelMixin
 from .permissions import IsAdminOrReadOnlyPermission, IsAdminUserPermission
 from rest_framework.decorators import api_view, permission_classes
@@ -157,6 +158,7 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(['PATCH', 'GET'])
 def user_own_view(request):
     user = get_object_or_404(User, pk=request.user.pk)
+
     if request.method == 'PATCH':
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -188,5 +190,10 @@ def user_own_view(request):
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairViewSerializer
-    queryset = User.objects.all()
+
+    def post(self, *args, **kwargs):
+        if not (self.request.data and self.request.data.get('username')):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if self.request.data.get('username') not in [user.username for user in User.objects.all()]:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return super().post(self.request, *args, **kwargs)
