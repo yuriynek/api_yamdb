@@ -1,5 +1,5 @@
 import rest_framework.exceptions
-from rest_framework import serializers, status
+from rest_framework import serializers, validators
 from reviews.models import Category, Genre, Title, Review, Comment, User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.response import Response
@@ -60,7 +60,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
         validators = [
-            serializers.UniqueTogetherValidator(
+            validators.UniqueTogetherValidator(
                 queryset=Review.objects.all(),
                 fields=('author', 'title')
             )

@@ -70,6 +70,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     pagination_class = LimitOffsetPagination
     filterset_class = TitleFilter
+    serializer_class = TitleSerializer
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
@@ -159,34 +160,21 @@ class UserViewSet(viewsets.ModelViewSet):
 def user_own_view(request):
     user = get_object_or_404(User, pk=request.user.pk)
 
-    if request.method == 'PATCH':
-        serializer = UserSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    if request.method != 'PATCH':
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+    serializer = UserSerializer(user, data=request.data, partial=True)
+    role_changed = request.data.get('role')
+    change_role_restriction = not (user.role == 'admin' and user.is_superuser)
+
+    if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return Response(
-        {'username': user.username,
-         'email': user.email,
-         'first_name': user.first_name,
-         'last_name': user.last_name,
-         'bio': user.bio,
-         'role': user.role}
-    )
 
+    if role_changed and change_role_restriction:
+        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['POST', 'GET'])
-# @permission_classes([permissions.AllowAny])
-# def get_tokens_for_user(request):
-#     user = get_object_or_404(User, username=request.data.get('username'))
-#     confirmation_code = request.data.get('password')
-#     if confirmation_code != user.password:
-#         return Response(status=status.HTTP_400_BAD_REQUEST)
-#     refresh = RefreshToken.for_user(user)
-#     return Response({
-#         'refresh': str(refresh),
-#         'access': str(refresh.access_token),
-#     })
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
