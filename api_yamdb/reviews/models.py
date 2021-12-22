@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 SCORES = [(i, i) for i in range(1, 11)]
 USER_ROLES = (('user', 'Пользователь'),
@@ -75,6 +75,10 @@ class Review(models.Model):
 
     class Meta:
         db_table = 'review'
+        constraints = [models.UniqueConstraint(
+            fields=['title', 'author'],
+            name='unique author review'
+        )]
 
 
 class Comment(models.Model):
