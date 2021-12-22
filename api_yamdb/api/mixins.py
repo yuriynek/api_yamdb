@@ -1,5 +1,7 @@
 from rest_framework import mixins, viewsets
-from .permissions import IsAdminOrReadOnlyPermission, IsAuthorOrStaffOrReadOnlyPermission
+
+from .permissions import (IsAdminOrReadOnlyPermission,
+                          IsAuthorOrStaffOrReadOnlyPermission)
 
 
 class CreateByAdminOrReadOnlyModelMixin(mixins.CreateModelMixin,

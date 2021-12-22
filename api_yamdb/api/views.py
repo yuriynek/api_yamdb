@@ -1,25 +1,25 @@
-import rest_framework.exceptions
-from django.contrib.auth.hashers import make_password
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
 import random
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import viewsets, filters, mixins, permissions, status
-from rest_framework.pagination import LimitOffsetPagination
+
+from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
-from .serializers import TitleSerializer, GenreSerializer, \
-    CategorySerializer, ReviewSerializer, CommentSerializer, UserCreateThroughEmailSerializer, UserSerializer, \
-    ReadTitleSerializer
-from .mixins import CreateByAdminOrReadOnlyModelMixin, AuthorStaffOrReadOnlyModelMixin
-from .permissions import IsAdminOrReadOnlyPermission, IsAdminUserPermission
-from rest_framework.decorators import api_view, permission_classes
-from reviews.models import Title, Genre, Category, Review, User
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import api_view
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from reviews.models import Category, Genre, Review, Title, User
+
 from .filters import TitleFilter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from .mixins import (AuthorStaffOrReadOnlyModelMixin,
+                     CreateByAdminOrReadOnlyModelMixin)
+from .permissions import IsAdminOrReadOnlyPermission, IsAdminUserPermission
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReadTitleSerializer,
+                          ReviewSerializer, TitleSerializer,
+                          UserCreateThroughEmailSerializer, UserSerializer)
 
 
 class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
@@ -122,7 +122,8 @@ class UserCreateThroughEmailViewSet(viewsets.GenericViewSet,
 
     def perform_create(self, serializer):
         email = self.request.data.get('email')
-        confirmation_code = ''.join([str(random.randint(0, 9)) for _ in range(5)])
+        confirmation_code = ''.join(
+            [str(random.randint(0, 9)) for _ in range(5)])
         message = f'Your confirmation code is: {confirmation_code}'
         send_mail(from_email='yamdb_auth@yamdb.fake',
                   recipient_list=[email],
@@ -137,7 +138,8 @@ class UserCreateThroughEmailViewSet(viewsets.GenericViewSet,
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_200_OK, headers=headers)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -182,6 +184,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
     def post(self, *args, **kwargs):
         if not (self.request.data and self.request.data.get('username')):
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        if self.request.data.get('username') not in [user.username for user in User.objects.all()]:
+        if (self.request.data.get('username')
+                not in [user.username for user in User.objects.all()]):
             return Response(status=status.HTTP_404_NOT_FOUND)
         return super().post(self.request, *args, **kwargs)

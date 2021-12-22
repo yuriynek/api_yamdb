@@ -1,8 +1,7 @@
-import rest_framework.exceptions
-from rest_framework import serializers, validators
-from reviews.models import Category, Genre, Title, Review, Comment, User
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -20,8 +19,13 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(required=True, slug_field='slug', queryset=Category.objects.all())
-    genre = serializers.SlugRelatedField(required=True, many=True, slug_field='slug', queryset=Genre.objects.all())
+    category = serializers.SlugRelatedField(required=True,
+                                            slug_field='slug',
+                                            queryset=Category.objects.all())
+    genre = serializers.SlugRelatedField(required=True,
+                                         many=True,
+                                         slug_field='slug',
+                                         queryset=Genre.objects.all())
     year = serializers.IntegerField(required=True)
     name = serializers.CharField(required=True)
 
@@ -47,28 +51,37 @@ class ReadTitleSerializer(serializers.ModelSerializer):
     def get_rating(obj):
         queryset = obj.reviews.all()
         if queryset:
-            return round(sum([item.score for item in queryset])/len(queryset), 2)
+            return round(sum(
+                [item.score for item in queryset]) / len(queryset), 2)
         return None
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field='username', default=serializers.CurrentUserDefault(),
-                                          queryset=User.objects.all())
-    title = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SlugRelatedField(slug_field='username',
+                                          read_only=True)
 
     class Meta:
         model = Review
-        fields = '__all__'
-        validators = [
-            validators.UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('author', 'title')
-            )
-        ]
+        exclude = ['title']
+
+    def validate(self, data):
+        """Валидация уникального сочетания полей [title, author]
+        Через UniqueTogetherValidator выдает ошибку БД IntegrityError"""
+        request = self.context.get('request')
+        if request.method != 'POST':
+            return data
+        user = request.user
+        title = get_object_or_404(
+            Title, pk=request.parser_context.get('kwargs').get('title_id'))
+        if Review.objects.filter(author=user, title=title).exists():
+            raise serializers.ValidationError(
+                'Вы уже оставили отзыв на данное произведение!')
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field='username', read_only=True)
+    author = serializers.SlugRelatedField(slug_field='username',
+                                          read_only=True)
 
     class Meta:
         model = Comment
@@ -87,7 +100,8 @@ class UserCreateThroughEmailSerializer(serializers.ModelSerializer):
     def validate_username(value):
         usernames = [user.username for user in User.objects.all()]
         if value in usernames:
-            raise serializers.ValidationError('Такой username уже существует!')
+            raise serializers.ValidationError(
+                'Такой username уже существует!')
         if value == 'me':
             raise serializers.ValidationError(
                 'Такой username нельзя использовать')
@@ -123,7 +137,8 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(value):
         usernames = [user.username for user in User.objects.all()]
         if value in usernames:
-            raise serializers.ValidationError('Такой username уже существует!')
+            raise serializers.ValidationError(
+                'Такой username уже существует!')
         if value == 'me':
             raise serializers.ValidationError(
                 'Такой username нельзя использовать')
