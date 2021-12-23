@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import User, Category, Genre, Title, GenreTitle, Review, Comment
 
+
 class UserAdmin(admin.ModelAdmin):
     list_display = ('bio', 'role')
     search_fields = ('bio',)
@@ -11,7 +12,6 @@ class UserAdmin(admin.ModelAdmin):
 
 class TitleAdmin(admin.ModelAdmin):
     list_display = ('name', 'year', 'description', 'category')
-    #Добавить genre поле ManytoMany
     search_fields = ('description',)
     empty_value_display = '-пусто-'
     list_filter = ('year',)
@@ -45,9 +45,16 @@ class CommentAdmin(admin.ModelAdmin):
     list_filter = ('pub_date',)
 
 
+class GenreTitleAdmin(admin.ModelAdmin):
+    list_display = ('genre', 'title')
+    search_fields = ('genre', 'title')
+    empty_value_display = '-пусто-'
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Title, TitleAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Comment, CommentAdmin)
+admin.site.register(GenreTitle, GenreTitleAdmin)
