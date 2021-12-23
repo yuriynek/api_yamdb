@@ -33,13 +33,14 @@ class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
     filterset_fields = ('slug',)
     search_fields = ('name',)
     lookup_field = 'slug'
+    queryset = Category.objects.all()
 
-    def get_queryset(self):
-        queryset = Category.objects.all()
-        slug = self.kwargs.get('slug')
-        if slug:
-            queryset = queryset.filter(slug=slug)
-        return queryset
+    # def get_queryset(self):
+    #     queryset = Category.objects.all()
+    #     slug = self.kwargs.get('slug')
+    #     if slug:
+    #         queryset = queryset.filter(slug=slug)
+    #     return queryset
 
 
 class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
@@ -52,13 +53,14 @@ class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
     filterset_fields = ('slug',)
     search_fields = ('name',)
     lookup_field = 'slug'
+    queryset = Genre.objects.all()
 
-    def get_queryset(self):
-        queryset = Genre.objects.all()
-        slug = self.kwargs.get('slug')
-        if slug:
-            queryset = queryset.filter(slug=slug)
-        return queryset
+    # def get_queryset(self):
+    #     queryset = Genre.objects.all()
+    #     slug = self.kwargs.get('slug')
+    #     if slug:
+    #         queryset = queryset.filter(slug=slug)
+    #     return queryset
 
 
 class TitleViewSet(viewsets.ModelViewSet):
