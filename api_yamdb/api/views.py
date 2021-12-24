@@ -1,7 +1,7 @@
-import random
-
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.views import PasswordResetView
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
@@ -35,13 +35,6 @@ class CategoryViewSet(CreateByAdminOrReadOnlyModelMixin):
     lookup_field = 'slug'
     queryset = Category.objects.all()
 
-    # def get_queryset(self):
-    #     queryset = Category.objects.all()
-    #     slug = self.kwargs.get('slug')
-    #     if slug:
-    #         queryset = queryset.filter(slug=slug)
-    #     return queryset
-
 
 class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
     """Доступные методы: GET (перечень), POST, DEL.
@@ -55,19 +48,12 @@ class GenreViewSet(CreateByAdminOrReadOnlyModelMixin):
     lookup_field = 'slug'
     queryset = Genre.objects.all()
 
-    # def get_queryset(self):
-    #     queryset = Genre.objects.all()
-    #     slug = self.kwargs.get('slug')
-    #     if slug:
-    #         queryset = queryset.filter(slug=slug)
-    #     return queryset
-
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Доступные методы: GET (перечень либо отдельная запись), POST, PATCH, DEL.
     На чтение доступ без токена, на добавление/обновление/удаление - админу
     Также требуется пагинация"""
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     permission_classes = (IsAdminOrReadOnlyPermission,)
     filter_backends = (DjangoFilterBackend,)
     pagination_class = LimitOffsetPagination
@@ -117,23 +103,26 @@ class CommentViewSet(AuthorStaffOrReadOnlyModelMixin):
 
 
 class UserCreateThroughEmailViewSet(viewsets.GenericViewSet,
-                                    mixins.CreateModelMixin):
+                                    mixins.CreateModelMixin,
+                                    PasswordResetView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = UserCreateThroughEmailSerializer
 
     def perform_create(self, serializer):
+        # после валидации сериализатора сохраняем нового юзера
         email = self.request.data.get('email')
-        confirmation_code = ''.join(
-            [str(random.randint(0, 9)) for _ in range(5)])
+        user = serializer.save()
+        # генерируем юзеру шестизначный код подтверждения с помощью токена
+        confirmation_code = self.token_generator.make_token(user=user)[-7:-1]
+        # шифруем и сохраняем в БД для конкретного пользователя
+        user.password = make_password(confirmation_code)
+        user.save()
         message = f'Your confirmation code is: {confirmation_code}'
-        send_mail(from_email='yamdb_auth@yamdb.fake',
+        send_mail(from_email=self.from_email,
                   recipient_list=[email],
                   subject='Email confirmation',
                   message=message)
-        serializer.save(
-            password=make_password(confirmation_code)
-        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -151,13 +140,8 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
-
-    def get_queryset(self):
-        queryset = User.objects.all()
-        username = self.kwargs.get('username')
-        if not username:
-            return queryset
-        return queryset.filter(username=username)
+    queryset = User.objects.all()
+    filterset_fields = ('slug',)
 
 
 @api_view(['PATCH', 'GET'])
@@ -169,7 +153,7 @@ def user_own_view(request):
         return Response(serializer.data)
     serializer = UserSerializer(user, data=request.data, partial=True)
     role_changed = request.data.get('role')
-    change_role_restriction = not (user.role == 'admin' and user.is_superuser)
+    change_role_restriction = not (user.is_admin and user.is_superuser)
 
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -186,7 +170,5 @@ class MyTokenObtainPairView(TokenObtainPairView):
     def post(self, *args, **kwargs):
         if not (self.request.data and self.request.data.get('username')):
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        if (self.request.data.get('username')
-                not in [user.username for user in User.objects.all()]):
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        get_object_or_404(User, username=self.request.data.get('username'))
         return super().post(self.request, *args, **kwargs)

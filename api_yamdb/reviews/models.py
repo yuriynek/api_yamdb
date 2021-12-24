@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from .validators import validate_year
+
 SCORES = [(i, i) for i in range(1, 11)]
 USER_ROLES = (('user', 'Пользователь'),
               ('moderator', 'Модератор'),
@@ -13,7 +15,22 @@ class User(AbstractUser):
     role = models.CharField(choices=USER_ROLES, default='user', max_length=128)
 
     class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'users'
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
+
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
@@ -21,7 +38,14 @@ class Category(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
 
     class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'category'
+
+    def __str__(self):
+        return self.name
 
 
 class Genre(models.Model):
@@ -29,13 +53,21 @@ class Genre(models.Model):
     slug = models.SlugField(unique=True)
 
     class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'genre'
+
+    def __str__(self):
+        return self.name
 
 
 class Title(models.Model):
     name = models.TextField(max_length=255,
                             verbose_name='Название произведения')
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.IntegerField(verbose_name='Год выпуска',
+                               validators=[validate_year])
     description = models.TextField(max_length=255, verbose_name='Описание')
     genre = models.ManyToManyField(Genre,
                                    through='GenreTitle',
@@ -47,7 +79,14 @@ class Title(models.Model):
                                  null=True)
 
     class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'titles'
+
+    def __str__(self):
+        return self.name
 
 
 class GenreTitle(models.Model):
@@ -55,6 +94,10 @@ class GenreTitle(models.Model):
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
     class Meta:
+        verbose_name = 'Жанр-Произведение'
+        verbose_name_plural = 'Жанры-Произведения'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'genre_title'
 
 
@@ -74,11 +117,18 @@ class Review(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'review'
         constraints = [models.UniqueConstraint(
             fields=['title', 'author'],
             name='unique author review'
         )]
+
+    def __str__(self):
+        return self.text[:30]
 
 
 class Comment(models.Model):
@@ -94,4 +144,11 @@ class Comment(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+        # Кастомизируем название таблицы
+        # для совместимости с загрузкой данных из CSV в БД
         db_table = 'comments'
+
+    def __str__(self):
+        return self.text[:30]
