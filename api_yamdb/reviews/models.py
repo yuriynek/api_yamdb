@@ -21,7 +21,8 @@ class Role(enum.Enum):
 class User(AbstractUser):
     bio = models.TextField('Биография',
                            blank=True,)
-    role = models.CharField(choices=Role.choices(), default=Role.user.name, max_length=128)
+    role = models.CharField(
+        choices=Role.choices(), default=Role.user.name, max_length=128)
 
     class Meta:
         verbose_name = 'Пользователь'
