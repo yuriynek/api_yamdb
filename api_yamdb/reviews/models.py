@@ -1,18 +1,27 @@
+import enum
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from .validators import validate_year
 
 SCORES = [(i, i) for i in range(1, 11)]
-USER_ROLES = (('user', 'Пользователь'),
-              ('moderator', 'Модератор'),
-              ('admin', 'Администратор'))
+
+
+class Role(enum.Enum):
+    user = 'Пользователь'
+    moderator = 'Модератор'
+    admin = 'Администратор'
+
+    @classmethod
+    def choices(cls):
+        return tuple((item.name, item.value) for item in cls)
 
 
 class User(AbstractUser):
     bio = models.TextField('Биография',
                            blank=True,)
-    role = models.CharField(choices=USER_ROLES, default='user', max_length=128)
+    role = models.CharField(choices=Role.choices(), default=Role.user.name, max_length=128)
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -23,11 +32,11 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role == Role.admin.name
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == Role.moderator.name
 
     def __str__(self):
         return self.username

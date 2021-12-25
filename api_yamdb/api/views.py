@@ -154,9 +154,7 @@ def user_own_view(request):
     serializer = UserSerializer(user, data=request.data, partial=True)
     role_changed = request.data.get('role')
     change_role_restriction = not (user.is_admin and user.is_superuser)
-
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
 
     if role_changed and change_role_restriction:
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
